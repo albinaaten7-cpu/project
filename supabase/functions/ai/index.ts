@@ -19,6 +19,9 @@ type GeminiResponse = {
     content?: {
       parts?: Array<{ text?: unknown }>;
     };
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { uri?: unknown; title?: unknown } }>;
+    };
   }>;
 };
 
@@ -39,7 +42,7 @@ Deno.serve(async (req) => {
       return json({ error: 'AI пока не настроен. Попроси наставника проверить секрет.' }, 503);
     }
 
-    const body = (await req.json()) as { prompt?: unknown; system?: unknown };
+    const body = (await req.json()) as { prompt?: unknown; system?: unknown; search?: unknown };
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     const system = typeof body.system === 'string' ? body.system.trim() : '';
 
@@ -56,6 +59,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           systemInstruction: system ? { parts: [{ text: system }] } : undefined,
           contents: [{ parts: [{ text: prompt }] }],
+          tools: body.search === true ? [{ google_search: {} }] : undefined,
         }),
       },
     );
@@ -72,7 +76,13 @@ Deno.serve(async (req) => {
       return json({ error: 'AI вернул пустой ответ. Попробуй переформулировать запрос.' }, 502);
     }
 
-    return json({ text });
+    const chunks = data.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+    const sources = chunks.flatMap((chunk) => {
+      const uri = chunk.web?.uri;
+      const title = chunk.web?.title;
+      return typeof uri === 'string' && typeof title === 'string' ? [{ uri, title }] : [];
+    });
+    return json({ text, sources });
   } catch (error) {
     console.error('AI function failed', error);
     return json({ error: 'Не получилось обратиться к AI. Попробуй ещё раз.' }, 500);
