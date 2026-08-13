@@ -3,6 +3,6 @@ export type Subject = {
   name: string;
   current_grade: number;
   target_grade: number;
-  exam_date: string;
+  exam_date: string | null;
   topics: string;
 };

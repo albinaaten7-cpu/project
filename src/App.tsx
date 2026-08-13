@@ -4,12 +4,14 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { PracticePage } from './pages/PracticePage';
 import { AccountPage } from './pages/AccountPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { SetupPage } from './pages/SetupPage';
 
 // Здесь живут только маршруты. Сами экраны складывай в src/pages/.
 export default function App() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/setup" component={SetupPage} />
       <Route path="/study" component={PracticePage} />
       <Route path="/practice" component={PracticePage} />
       <Route path="/account" component={AccountPage} />

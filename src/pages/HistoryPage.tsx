@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { SubjectList } from '../components/SubjectList';
 import { loadLessonHistory } from '../lib/dailyLessons';
-import { deleteSubject, loadStudyData, updateSubjectTopics } from '../lib/studyData';
+import { deleteSubject, loadStudyData, updateSubject, type NewSubject } from '../lib/studyData';
 import type { Subject } from '../lib/studyPlanner';
 import { supabase } from '../lib/supabase';
 
@@ -32,21 +32,22 @@ export function HistoryPage() {
   }, [refresh]);
 
   async function remove(id: string) {
-    try { await deleteSubject(id); await refresh(); }
-    catch { setMessage('Не удалось удалить предмет.'); }
+    try { await deleteSubject(id); setMessage('Предмет удалён.'); }
+    catch { setMessage('Не удалось полностью удалить предмет. Обнови страницу и попробуй ещё раз.'); }
+    finally { await refresh(); }
   }
 
-  async function updateTopics(id: string, topics: string) {
-    try { await updateSubjectTopics(id, topics); await refresh(); }
-    catch { setMessage('Не удалось сохранить темы.'); }
+  async function edit(id: string, subject: NewSubject) {
+    try { await updateSubject(id, subject); setMessage('Предмет обновлён.'); await refresh(); }
+    catch (error) { setMessage('Не удалось обновить предмет.'); throw error; }
   }
 
   if (loading) return <main className="centered">Собираю историю…</main>;
   return (
     <main className="history-page">
       <header className="practice-header">
-        <Link href="/">← К настройке</Link>
-        <div className="brand"><span>◎</span> Фокус</div>
+        <Link href="/setup">← К настройке</Link>
+        <div className="brand"><span>◎</span> Вектор</div>
       </header>
       <section className="history-hero">
         <span>↺</span>
@@ -55,8 +56,8 @@ export function HistoryPage() {
       {message && <p className="account-message">{message}</p>}
       <div className="history-grid">
         <section className="history-panel">
-          <div className="history-heading"><div><span>Предметы</span><h2>Мои экзамены</h2></div><Link href="/">+ Добавить</Link></div>
-          <SubjectList subjects={subjects} onDelete={remove} onUpdateTopics={updateTopics} />
+          <div className="history-heading"><div><span>Предметы</span><h2>Мои экзамены</h2></div><Link href="/setup">+ Добавить</Link></div>
+          <SubjectList subjects={subjects} onDelete={remove} onUpdate={edit} />
         </section>
         <section className="history-panel">
           <div className="history-heading"><div><span>Маршрут</span><h2>Учебные дни</h2></div><Link href="/study">Продолжить →</Link></div>
