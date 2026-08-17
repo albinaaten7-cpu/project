@@ -47,7 +47,7 @@ export function HistoryPage() {
     <main className="history-page">
       <header className="practice-header">
         <Link href="/setup">← К настройке</Link>
-        <div className="brand"><span>◎</span> Вектор</div>
+        <div className="top-actions"><Link href="/mistakes" className="mistakes-history-button">Работа над ошибками ✦</Link><div className="brand"><span>◎</span> Трек</div></div>
       </header>
       <section className="history-hero">
         <span>↺</span>

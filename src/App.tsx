@@ -5,18 +5,26 @@ import { PracticePage } from './pages/PracticePage';
 import { AccountPage } from './pages/AccountPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { SetupPage } from './pages/SetupPage';
+import { ScrollToTop } from './components/ScrollToTop';
+import { DiagnosticPage } from './pages/DiagnosticPage';
+import { MistakesPage } from './pages/MistakesPage';
 
 // Здесь живут только маршруты. Сами экраны складывай в src/pages/.
 export default function App() {
   return (
-    <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/setup" component={SetupPage} />
-      <Route path="/study" component={PracticePage} />
-      <Route path="/practice" component={PracticePage} />
-      <Route path="/account" component={AccountPage} />
-      <Route path="/history" component={HistoryPage} />
-      <Route component={NotFoundPage} />
-    </Switch>
+    <>
+      <ScrollToTop />
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/setup" component={SetupPage} />
+        <Route path="/diagnostic" component={DiagnosticPage} />
+        <Route path="/mistakes" component={MistakesPage} />
+        <Route path="/study" component={PracticePage} />
+        <Route path="/practice" component={PracticePage} />
+        <Route path="/account" component={AccountPage} />
+        <Route path="/history" component={HistoryPage} />
+        <Route component={NotFoundPage} />
+      </Switch>
+    </>
   );
 }

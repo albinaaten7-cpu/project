@@ -46,6 +46,14 @@ export async function loadTopicInsights() {
   return topicInsights(data ?? []);
 }
 
+export async function loadMistakeQuestions() {
+  const { data, error } = await supabase.from('quiz_sessions').select('mistakes').order('updated_at', { ascending: false });
+  if (error) throw error;
+  const unique = new Map<string, PracticeQuestion>();
+  (data ?? []).forEach((row) => (row.mistakes as PracticeQuestion[]).forEach((question) => unique.set(`${question.subject}|${question.topic}|${question.question}`, question)));
+  return Array.from(unique.values()).slice(0, 20);
+}
+
 export async function loadLearningStats(dailyMinutes: number): Promise<LearningStats> {
   const [attemptsResult, completionsResult] = await Promise.all([
     supabase.from('quiz_attempts').select('subject, topic, is_correct'),

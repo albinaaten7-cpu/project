@@ -6,13 +6,13 @@ import { LessonLoader } from '../components/LessonLoader';
 import { QuizRound } from '../components/QuizRound';
 import { QuizResult } from '../components/QuizResult';
 import { TodayCard } from '../components/TodayCard';
-import { generateDailyLesson, getTotalStudyDays, lessonQuestions, loadDailyLessons, type DailyLesson } from '../lib/dailyLessons';
+import { completeDailyLesson, generateDailyLessonCore, getTotalStudyDays, lessonQuestions, loadDailyLessons, saveDailyLesson, type DailyLesson } from '../lib/dailyLessons';
 import { loadStudyData, type StudySettings } from '../lib/studyData';
 import type { PracticeQuestion } from '../lib/practice';
 import type { Subject } from '../lib/studyPlanner';
 import { supabase } from '../lib/supabase';
 import { awardQuizXp } from '../lib/profile';
-import { loadQuizSession, loadQuizSessions, loadTopicInsights, saveQuizAnswer, type QuizSession } from '../lib/quizProgress';
+import { loadQuizSessions, loadTopicInsights, saveQuizAnswer, type QuizSession } from '../lib/quizProgress';
 import { HistoryLink } from '../components/HistoryLink';
 
 export function PracticePage() {
@@ -30,13 +30,13 @@ export function PracticePage() {
   const [sessions, setSessions] = useState(new Map<number, QuizSession>());
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [quizGenerating, setQuizGenerating] = useState(false);
   const [error, setError] = useState('');
   const [registered, setRegistered] = useState(false);
   const [awardedDays, setAwardedDays] = useState(new Set<number>());
   const autoOpened = useRef(false);
   const requestedDay = useRef(Math.max(1, Number(new URLSearchParams(window.location.search).get('day')) || 1));
-  const totalDays = settings && subjects.length ? getTotalStudyDays(subjects, settings.studyDaysPerWeek, settings.planDays) : 0;
-  const hasExamDate = subjects.some((subject) => Boolean(subject.exam_date));
+  const totalDays = settings && subjects.length ? getTotalStudyDays(settings.planDays) : 0;
   const lesson = lessons.get(selectedDay);
   const todayDay = Math.min(totalDays || 1, Array.from({ length: totalDays }, (_, index) => index + 1).find((day) => !sessions.get(day)?.completed) ?? totalDays);
   const todaySession = sessions.get(todayDay);
@@ -74,22 +74,42 @@ export function PracticePage() {
   async function openDay(day: number) {
     if (!settings) return;
     setSelectedDay(day); setIndex(-1); setScore(0); setStreak(0); setMistakes([]); setReviewMode(false); setQuestions([]); setError('');
-    let lesson = lessons.get(day);
-    if (!lesson) {
+    let dailyLesson = lessons.get(day);
+    const savedSession = sessions.get(day);
+    if (dailyLesson && lessonQuestions(dailyLesson).length >= 10) {
+      const nextQuestions = lessonQuestions(dailyLesson);
+      setQuestions(nextQuestions); setMainQuestionCount(nextQuestions.length);
+      if (savedSession) {
+        setIndex(savedSession.completed ? nextQuestions.length : savedSession.currentIndex);
+        setScore(savedSession.score); setStreak(savedSession.streak); setMistakes(savedSession.mistakes);
+      }
+      return;
+    }
+    if (!dailyLesson) {
       setGenerating(true);
       try {
         const insights = await loadTopicInsights();
-        lesson = await generateDailyLesson(day, getTotalStudyDays(subjects, settings.studyDaysPerWeek, settings.planDays), subjects, settings, Array.from(lessons.values()), insights);
-        setLessons((current) => new Map(current).set(day, lesson!));
+        dailyLesson = await generateDailyLessonCore(day, getTotalStudyDays(settings.planDays), subjects, settings, Array.from(lessons.values()), insights);
+        setLessons((current) => new Map(current).set(day, dailyLesson!));
       } catch (problem) {
-        setError(problem instanceof Error ? problem.message : 'Не удалось создать урок');
+        setError(problem instanceof Error ? problem.message : 'Не удалось создать конспект');
       } finally { setGenerating(false); }
     }
-    if (lesson) {
-      const nextQuestions = lessonQuestions(lesson);
+    if (!dailyLesson) return;
+    if (lessonQuestions(dailyLesson).length < 10) {
+      setQuizGenerating(true);
+      try {
+        dailyLesson = await completeDailyLesson(dailyLesson, settings);
+        setLessons((current) => new Map(current).set(day, dailyLesson!));
+        void saveDailyLesson(day, dailyLesson).catch(() => setError('Урок открыт, но не сохранился. Проверь соединение.'));
+      } catch (problem) {
+        setError(problem instanceof Error ? problem.message : 'Не удалось создать квиз');
+      } finally { setQuizGenerating(false); }
+    }
+    if (lessonQuestions(dailyLesson).length >= 10) {
+      const nextQuestions = lessonQuestions(dailyLesson);
       setQuestions(nextQuestions); setMainQuestionCount(nextQuestions.length);
-      const saved = await loadQuizSession(day);
-      if (saved) { setIndex(saved.completed ? nextQuestions.length : saved.currentIndex); setScore(saved.score); setStreak(saved.streak); setMistakes(saved.mistakes); setSessions((current) => new Map(current).set(day, saved)); }
+      if (savedSession) { setIndex(savedSession.completed ? nextQuestions.length : savedSession.currentIndex); setScore(savedSession.score); setStreak(savedSession.streak); setMistakes(savedSession.mistakes); }
     }
   }
 
@@ -109,14 +129,14 @@ export function PracticePage() {
 
   return (
     <main className="practice-page daily-page">
-      <header className="practice-header"><Link href="/setup">← Настройки</Link><div className="game-stats"><span>🔥 {streak}</span><b>⭐ {score} XP</b><HistoryLink /><Link href="/account">{registered ? 'Профиль' : 'Вход / регистрация'}</Link></div></header>
+      <header className="practice-header"><Link href="/setup">← Настройки</Link><div className="game-stats"><span>🔥 {streak}</span><b>⭐ {score} XP</b><Link href="/mistakes">Ошибки</Link><HistoryLink /><Link href="/account">{registered ? 'Профиль' : 'Вход / регистрация'}</Link></div></header>
       <TodayCard day={todayDay} subject={subjects[0]?.name} minutes={settings.dailyMinutes} currentIndex={todaySession?.currentIndex ?? 0} totalQuestions={10} onOpen={() => void openDay(todayDay)} />
-      <div className="route-heading"><span>Твой маршрут</span><h1>{totalDays} учебных дней{hasExamDate ? ' до экзамена' : ' в твоём плане'}</h1><p>По {settings.dailyMinutes} минут · {settings.studyDaysPerWeek} дней в неделю</p></div>
-      <DayNavigator total={totalDays} selected={selectedDay} readyDays={new Set(lessons.keys())} onSelect={(day) => void openDay(day)} />
+      <div className="route-heading"><span>Твой маршрут</span><h1>{totalDays} учебных дней в твоём плане</h1><p>По {settings.dailyMinutes} минут · всего {totalDays} занятий</p></div>
+      <DayNavigator total={totalDays} selected={selectedDay} readyDays={new Set(Array.from(lessons.entries()).filter(([, item]) => lessonQuestions(item).length >= 10).map(([day]) => day))} onSelect={(day) => void openDay(day)} />
       {generating && <LessonLoader day={selectedDay} subject={subjects[0]?.name} />}
       {error && <div className="day-error"><p>{error}</p><button onClick={() => void openDay(selectedDay)}>Попробовать снова</button></div>}
       {!selectedDay && !generating && <div className="choose-day"><span>☝️</span><h2>Выбери день</h2><p>Нажми «День 1», чтобы получить первый урок. Следующий день откроет новый материал.</p></div>}
-      {lesson && index === -1 && <LessonBrief lesson={lesson} onStart={() => setIndex(0)} />}
+      {lesson && index === -1 && <LessonBrief lesson={lesson} quizLoading={quizGenerating} onStart={() => setIndex(0)} />}
       {lesson && index >= 0 && index < questions.length && <><div className="progress-track"><span style={{ width: `${(index / questions.length) * 100}%` }}></span></div><p className="round-number">Вопрос {index + 1} из {questions.length}</p><QuizRound key={`${selectedDay}-${index}`} question={questions[index]} onAnswer={answer} onNext={next} isLast={index === questions.length - 1} /></>}
       {lesson && questions.length > 0 && index >= questions.length && <QuizResult day={selectedDay} totalDays={totalDays} score={score} totalQuestions={mainQuestionCount} mistakes={mistakes} registered={registered} reviewMode={reviewMode} onReview={() => { setQuestions(mistakes); setIndex(0); setReviewMode(true); }} onNextDay={() => void openDay(selectedDay < totalDays ? selectedDay + 1 : selectedDay)} />}
     </main>

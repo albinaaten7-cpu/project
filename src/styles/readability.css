@@ -1,0 +1,39 @@
+/* Общий размер карточек и текста: комфортно на ноутбуке и телефоне. */
+.practice-page { max-width: 780px; }
+.account-page { max-width: 940px; }
+.history-page { max-width: 1100px; }
+
+.panel:not(.setup-card), .history-panel, .account-form,
+.profile-details, .profile-progress-card, .learning-stats { padding: 30px; }
+.today-card { padding: 21px 24px; }
+.quiz-card, .lesson-brief { padding: 38px; }
+.feature-grid article { padding: 26px 18px; }
+.feature-grid article:nth-child(2) { padding-inline: 26px; }
+.feature-demo { min-height: 182px; padding: 17px; }
+.testimonial-card { min-height: 330px; padding: 32px; }
+
+.section-title p, .feature-grid p, .testimonial-heading p,
+.account-form p, .profile-progress-card p, .profile-progress-card small { font-size: 13px; }
+.input-help, .field-hint, .accuracy-note, .selection-summary,
+.subject-info small, .added-summary p { font-size: 12px; }
+.subject-info span, .plan-name span, .history-day strong,
+.lesson-grid b, .lesson-grid p, .lesson-grid li { font-size: 13px; }
+.history-day span, .history-heading span, .account-hero > span,
+.stats-heading > span, .weak-topics > div > span, .weak-topics > p,
+.mastery-heading span, .mastery-list article small { font-size: 10px; }
+.stats-grid span, .weak-topics article small, .mastery-status { font-size: 9px; }
+.today-info small, .today-date span, .quiz-part-loader small { font-size: 10px; }
+.today-info p, .lesson-loader p, .quiz-part-loader b { font-size: 12px; }
+.quiz-meta span, .mission-label, .lesson-loader small { font-size: 11px; }
+
+.site-header nav > a { min-height: 44px; font-size: 13px; }
+.site-header .history-link, .site-header .account-link { font-size: 13px; }
+.nav-home { font-size: 12px; }
+
+@media (max-width: 620px) {
+  .panel:not(.setup-card), .history-panel, .account-form,
+  .profile-details, .profile-progress-card, .learning-stats { padding: 23px; }
+  .quiz-card, .lesson-brief { padding: 24px; }
+  .site-header nav > a { min-height: 39px; font-size: 10px; }
+  .site-header .account-link, .nav-start, .nav-home { font-size: 10px; }
+}

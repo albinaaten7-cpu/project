@@ -1,0 +1,11 @@
+.diagnostic-page { display: grid; align-content: center; gap: 18px; }
+.diagnostic-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; color: var(--soft); font-size: 11px; }
+.diagnostic-header a { color: var(--soft); font-weight: 700; text-decoration: none; }
+.diagnostic-header b { color: var(--green); }
+.diagnostic-loading { min-height: 420px; display: grid; place-content: center; justify-items: center; text-align: center; }
+.diagnostic-loading > span { width: 66px; height: 66px; display: grid; place-items: center; color: white; background: linear-gradient(145deg, var(--green), #9478f3); border-radius: 22px; font-size: 36px; animation: diagnostic-pulse 1.4s ease-in-out infinite; }
+.diagnostic-loading h1 { margin: 18px 0 7px; }.diagnostic-loading p { color: var(--soft); font-size: 12px; }
+.diagnostic-result strong { color: var(--green); }
+.mistakes-page { display: grid; align-content: start; gap: 18px; }
+@keyframes diagnostic-pulse { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.08) rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) { .diagnostic-loading > span { animation: none; } }

@@ -4,7 +4,7 @@ export function IntroGuide() {
       <div className="intro-copy">
         <p>Учебный маршрут лично для тебя</p>
         <h1>Пойми, что учить сегодня</h1>
-        <span>Добавь предметы, оценки и темы. Вектор определит приоритеты и разделит подготовку на понятные ежедневные уроки.</span>
+        <span>Добавь предметы, оценки и темы. Трек определит приоритеты и разделит подготовку на понятные ежедневные уроки.</span>
         <div className="intro-steps">
           <div><b>1</b><small>Расскажи о цели</small></div>
           <div><b>2</b><small>Получи план по дням</small></div>
@@ -12,9 +12,10 @@ export function IntroGuide() {
         </div>
       </div>
       <aside className="intro-example">
-        <small>Твой день в Векторе</small>
+        <small>Твой день в Треке</small>
         <b>Линейные уравнения</b>
         <span>40 минут · урок и практика</span>
+        <div className="example-equation" aria-hidden="true"><span>2x + 4 = 12</span><i>→</i><b>x = 4</b></div>
         <div className="example-progress"><i style={{ width: '72%' }} /></div>
         <ul>
           <li><i>✓</i><span>Понятный разбор темы</span></li>

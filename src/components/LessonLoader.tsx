@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
 const stages = [
-  'Выбираю самое важное по теме',
-  'Собираю понятный разбор и пример',
-  'Создаю разные форматы вопросов',
-  'Проверяю ответы и объяснения',
+  'Выбираю точную тему дня',
+  'Проверяю главные факты',
+  'Собираю понятный конспект',
+  'Готовлю разобранный пример',
 ];
 
 export function LessonLoader({ day, subject }: { day: number; subject?: string }) {
@@ -22,7 +22,7 @@ export function LessonLoader({ day, subject }: { day: number; subject?: string }
   return (
     <section className="lesson-loader" aria-live="polite">
       <div className="loader-orbit"><span>✦</span><i /></div>
-      <div><small>День {day}{subject ? ` · ${subject}` : ''}</small><h2>{stages[stage]}</h2><p>Первое создание занимает немного времени. Потом урок откроется мгновенно.</p></div>
+      <div><small>День {day}{subject ? ` · ${subject}` : ''}</small><h2>{stages[stage]}</h2><p>Сначала покажем материал, затем отдельно догрузим квиз.</p></div>
       <div className="loader-progress"><span style={{ width: `${progress}%` }} /></div>
       <b>{progress}%</b>
     </section>

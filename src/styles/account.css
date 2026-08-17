@@ -21,7 +21,8 @@
 .profile-progress-card p, .profile-progress-card small { color: var(--soft); font-size: 11px; }
 .profile-progress-bar { height: 11px; overflow: hidden; margin: 18px 0 6px; background: var(--mint); border-radius: 20px; }
 .profile-progress-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #9c80f5); border-radius: inherit; }
-.profile-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 18px; align-items: start; }
+.profile-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 18px; align-items: stretch; }
+.profile-grid > .profile-details, .profile-grid > .profile-progress-card { height: 100%; }
 .profile-details { display: grid; gap: 16px; padding: 28px; background: white; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 12px 35px rgba(48,39,91,.06); }
 .profile-details > div:not(.profile-edit-actions, .nickname-input) { display: grid; gap: 4px; }
 .profile-details span { color: var(--soft); font-size: 10px; }
@@ -35,4 +36,14 @@
 .learning-stats { margin-top: 18px; padding: 28px; background: white; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 12px 35px rgba(48,39,91,.06); }.stats-heading > span { color: var(--orange); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }.stats-heading h2 { margin-top: 3px; }
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin: 20px 0 25px; }.stats-grid article { display: grid; gap: 3px; padding: 15px; background: #f7f5ff; border-radius: 14px; }.stats-grid b { color: var(--green); font-size: 22px; }.stats-grid span { color: var(--soft); font-size: 8px; line-height: 1.3; }
 .weak-topics { display: grid; gap: 9px; }.weak-topics > div { display: grid; gap: 2px; margin-bottom: 3px; }.weak-topics > div > b { font-size: 13px; }.weak-topics > div > span, .weak-topics > p { color: var(--soft); font-size: 9px; }.weak-topics article { display: grid; grid-template-columns: minmax(110px, .8fr) 1fr auto; gap: 12px; align-items: center; }.weak-topics article > span { display: grid; }.weak-topics article b { color: var(--ink); font-size: 10px; }.weak-topics article small { color: var(--soft); font-size: 8px; }.weak-topics article > div { height: 7px; overflow: hidden; background: var(--mint); border-radius: 20px; }.weak-topics article i { display: block; height: 100%; background: linear-gradient(90deg, var(--orange), #ffb15c); border-radius: inherit; }.weak-topics article strong { color: var(--soft); font-size: 9px; }
-@media (max-width: 650px) { .account-grid, .profile-grid { grid-template-columns: 1fr; }.stats-grid { grid-template-columns: 1fr 1fr; } }
+.mastery-map { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.mastery-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.mastery-heading > div { display: grid; gap: 3px; }.mastery-heading b { font-size: 14px; }.mastery-heading span { color: var(--soft); font-size: 9px; }
+.mastery-heading a { color: var(--green); font-size: 10px; font-weight: 800; text-decoration: none; }
+.mastery-list { display: grid; gap: 10px; margin-top: 16px; }
+.mastery-list article { display: grid; grid-template-columns: minmax(130px, 1fr) auto; gap: 8px 14px; align-items: center; padding: 13px; background: #f8f7fd; border-radius: 13px; }
+.mastery-list article > div:first-child { display: grid; gap: 2px; }.mastery-list article b { font-size: 11px; }.mastery-list article small { color: var(--soft); font-size: 8px; }
+.mastery-status { padding: 5px 8px; color: var(--green); background: var(--mint); border-radius: 20px; font-size: 8px; font-weight: 800; }
+.mastery-track { height: 7px; overflow: hidden; background: #e9e5f6; border-radius: 20px; }.mastery-track i { display: block; height: 100%; background: linear-gradient(90deg, var(--orange), #ffc05d); border-radius: inherit; }
+.mastery-list article > strong { color: var(--soft); font-size: 9px; }.mastery-empty { margin-top: 14px; color: var(--soft); font-size: 10px; }
+@media (max-width: 650px) { .account-grid, .profile-grid { grid-template-columns: 1fr; }.stats-grid { grid-template-columns: 1fr 1fr; }.mastery-heading { align-items: start; flex-direction: column; }.mastery-list article { grid-template-columns: 1fr auto; } }

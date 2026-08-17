@@ -6,7 +6,7 @@ export type StudySettings = {
   weeklyMinutes: number;
   schoolGrade: number;
   schoolQuarter: number;
-  country: 'Казахстан' | 'США';
+  country: 'Казахстан';
   region: string;
   dailyMinutes: number;
   studyDaysPerWeek: number;
@@ -25,7 +25,7 @@ export async function loadStudyData() {
     weeklyMinutes: settingsResult.data?.weekly_minutes ?? 420,
     schoolGrade: settingsResult.data?.school_grade ?? 7,
     schoolQuarter: settingsResult.data?.school_quarter ?? 1,
-    country: (settingsResult.data?.country ?? 'Казахстан') as StudySettings['country'],
+    country: 'Казахстан' as const,
     region: settingsResult.data?.region ?? 'Русский язык обучения',
     dailyMinutes: settingsResult.data?.daily_minutes ?? 60,
     studyDaysPerWeek: settingsResult.data?.study_days_per_week ?? 5,
@@ -55,7 +55,7 @@ export async function updateSubject(id: string, subject: NewSubject) {
   await clearGeneratedRoute();
 }
 
-async function clearGeneratedRoute() {
+export async function clearGeneratedRoute() {
   const results = await Promise.all([
     supabase.from('daily_lessons').delete().gte('day_number', 1),
     supabase.from('quiz_sessions').delete().gte('day_number', 1),

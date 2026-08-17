@@ -17,9 +17,9 @@ export function SiteHeader({ session = null, setupMode = false }: { session?: Se
   return (
     <>
       <header className="site-header">
-        <Link href="/" className="brand"><span>◎</span> Вектор</Link>
+        <Link href="/" className="brand"><span>◎</span> Трек</Link>
         <nav>
-          {setupMode ? <Link href="/" className="nav-home">← На главную</Link> : <Link href="/setup" className="nav-start" onClick={startPlan}>Начать свой план</Link>}
+          {setupMode ? <Link href="/" className="nav-home">← На главную</Link> : <Link href="/setup" className="nav-start" onClick={startPlan}>Начать</Link>}
           <HistoryLink />
           <Link href="/account" className="account-link">{!session || session.user.is_anonymous ? 'Вход / регистрация' : 'Профиль'}</Link>
         </nav>

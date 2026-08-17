@@ -15,10 +15,8 @@ export type LessonSection = {
 
 export type DailyLesson = { dayNumber: number; title: string; mission: string; sections: LessonSection[] };
 
-function parseJson(text: string) {
-  const lesson = JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()) as DailyLesson;
-  if (!isValidLesson(lesson)) throw new Error('AI не создал игровые вопросы. Нажми на день ещё раз.');
-  return lesson;
+function parseJson<T>(text: string) {
+  return JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()) as T;
 }
 
 function isValidQuestion(quiz: Omit<PracticeQuestion, 'subject' | 'topic'>) {
@@ -38,14 +36,22 @@ function isValidLesson(lesson: DailyLesson) {
   );
 }
 
-export function getTotalStudyDays(subjects: Subject[], studyDaysPerWeek: number, planDays: number) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const examDates = subjects.flatMap((subject) => subject.exam_date ? [new Date(`${subject.exam_date}T00:00:00`).getTime()] : []).filter(Number.isFinite);
-  if (examDates.length === 0) return Math.min(120, Math.max(1, planDays));
-  const lastExam = Math.max(...examDates);
-  const calendarDays = Math.max(1, Math.ceil((lastExam - today.getTime()) / 86_400_000));
-  return Math.min(120, Math.max(1, Math.ceil((calendarDays / 7) * studyDaysPerWeek)));
+function isValidCore(lesson: DailyLesson) {
+  return typeof lesson.title === 'string' && typeof lesson.mission === 'string' && lesson.sections?.length === 1 &&
+    lesson.sections.every((section) => typeof section.subject === 'string' && typeof section.topic === 'string' &&
+      typeof section.summary === 'string' && Array.isArray(section.keyPoints) && section.keyPoints.length === 3 &&
+      typeof section.workedExample === 'string');
+}
+
+async function invokeJson<T>(prompt: string, system: string, search = false) {
+  const { data, error } = await supabase.functions.invoke('ai', { body: { prompt, system, search, json: true, thinking: search ? 'medium' : 'low' } });
+  if (error) throw new Error(error.message);
+  if (typeof data?.error === 'string') throw new Error(data.error);
+  return parseJson<T>(String(data?.text ?? ''));
+}
+
+export function getTotalStudyDays(planDays: number) {
+  return Math.min(120, Math.max(1, planDays));
 }
 
 export async function loadDailyLessons() {
@@ -63,28 +69,60 @@ export async function loadLessonHistory() {
   return (data ?? []).map((row) => ({ dayNumber: row.day_number, title: (row.content as DailyLesson).title, createdAt: row.created_at }));
 }
 
-export async function generateDailyLesson(dayNumber: number, totalDays: number, subjects: Subject[], settings: StudySettings, previousLessons: DailyLesson[], insights: TopicInsight[]) {
-  const context = subjects.map((subject) => ({ name: subject.name, topics: subject.topics, examDate: subject.exam_date, currentGrade: subject.current_grade, targetGrade: subject.target_grade }));
+export async function generateDailyLessonCore(dayNumber: number, totalDays: number, subjects: Subject[], settings: StudySettings, previousLessons: DailyLesson[], insights: TopicInsight[], retry = false): Promise<DailyLesson> {
+  const selectedSubject = subjects[(dayNumber - 1) % subjects.length];
+  const topics = selectedSubject.topics.split(/[;\n]+/).map((topic) => topic.trim()).filter(Boolean);
+  const selectedTopic = topics[Math.floor((dayNumber - 1) / subjects.length) % Math.max(1, topics.length)] ?? selectedSubject.topics;
+  const context = { name: selectedSubject.name, topic: selectedTopic, currentGrade: selectedSubject.current_grade, targetGrade: selectedSubject.target_grade };
   const completed = previousLessons.slice(-6).map((lesson) => ({ day: lesson.dayNumber, covered: lesson.sections.map((section) => ({ topic: section.topic, keyPoints: section.keyPoints })) }));
   const practiced = insights.reduce((total, insight) => total + insight.total, 0);
   const accuracy = practiced ? Math.round(insights.reduce((total, insight) => total + insight.correct, 0) / practiced * 100) : null;
   const difficulty = accuracy === null ? 'обычный стартовый уровень' : accuracy >= 80 ? 'повышенная сложность: меньше подсказок, больше применения' : accuracy < 50 ? 'базовый уровень: маленькие шаги и один наглядный пример' : 'средняя сложность с применением';
   const weakTopics = insights.filter((insight) => insight.accuracy < 70).slice(0, 4).map((insight) => ({ subject: insight.subject, topic: insight.topic, accuracy: insight.accuracy }));
-  const system = 'Ты создаёшь игровой урок школьнику на русском языке. Используй поиск и надёжные образовательные источники. Не выдумывай факты. Каждый новый день должен продвигать ученика: сначала основа, затем применение, смешанная практика и повторение. Объясняй коротко, ясно и конкретно.';
-  const prompt = `Создай учебный день ${dayNumber} из ${totalDays}. Ученик: ${settings.country}, ${settings.schoolGrade} класс. Доступно ${settings.dailyMinutes} минут. Предметы и точные темы указаны учеником: ${JSON.stringify(context)}. Уже пройденные дни: ${JSON.stringify(completed)}. Текущий уровень: ${difficulty}. Слабые темы по прошлым ответам: ${JSON.stringify(weakTopics)}.
-Верни только JSON: {"dayNumber":${dayNumber},"title":"интересное название дня","mission":"одна мотивирующая миссия","sections":[{"subject":"предмет","topic":"одна из введённых тем","summary":"мини-конспект 60–100 слов: объясни суть, а не совет учиться","keyPoints":["3–4 точных факта, формулы, связи или правила"],"workedExample":"один коротко разобранный пример, событие, задача или применение","quiz":[ВОПРОСЫ]}]}.
-Используй форматы вопросов по смыслу темы:
-1. Выбор: {"type":"choice","question":"...","options":["4 варианта"],"correctIndex":0,"explanation":"...","wrongExplanations":["по одной строке для каждого варианта, у правильного пустая строка"]}.
-2. Верно/неверно: {"type":"true_false","question":"утверждение","options":["Верно","Неверно"],"correctIndex":0,"explanation":"...","wrongExplanations":["...",""]}.
-3. Короткий ответ: {"type":"short_answer","question":"...","acceptedAnswers":["основной ответ","допустимый вариант"],"explanation":"..."}.
-4. Порядок: {"type":"order","question":"...","items":["элементы сразу в правильном порядке"],"explanation":"..."}. Порядок используй только для реальной хронологии, этапов процесса или алгоритма.
-Выбери только материал, который реально помещается в ${settings.dailyMinutes} минут. Не повторяй уже пройденные объяснения и вопросы. Для дня ${dayNumber} дай следующий уровень глубины. Если есть слабые темы, включи 2–3 новых задания на их понимание, не копируя старые вопросы. Создай ровно 10 разных игровых вопросов суммарно во всех sections и используй минимум 2 подходящих формата. Вопросы должны проверять понимание, применение и типичные ошибки, а не только запоминание.`;
+  const system = 'Ты создаёшь точный школьный мини-конспект на русском языке. Используй надёжные образовательные источники, не выдумывай факты и не добавляй темы, которых нет в запросе.';
+  const prompt = `Создай только конспект учебного дня ${dayNumber} из ${totalDays}. Ученик: ${settings.country}, ${settings.schoolGrade} класс. Время: ${settings.dailyMinutes} минут. Точная цель: ${JSON.stringify(context)}. Уже пройдено: ${JSON.stringify(completed)}. Уровень: ${difficulty}. Слабые темы: ${JSON.stringify(weakTopics)}.
+Верни только JSON: {"dayNumber":${dayNumber},"title":"интересное название","mission":"короткая миссия","sections":[{"subject":"${selectedSubject.name}","topic":"${selectedTopic}","summary":"точный мини-конспект 55–80 слов","keyPoints":["ровно 3 точных правила или факта"],"workedExample":"разобранный пример в 2–3 предложениях","quiz":[]}]}.
+Сейчас НЕ создавай вопросы. Объясни суть темы конкретно, без советов вроде «прочитай и повтори».`;
   const researchWords = /истори|географ|право|обществ|соврем|статист|новост/i;
-  const needsResearch = context.some((subject) => researchWords.test(`${subject.name} ${subject.topics}`));
-  const { data, error } = await supabase.functions.invoke('ai', { body: { prompt, system, search: needsResearch } });
-  if (error) throw new Error(error.message);
-  if (typeof data?.error === 'string') throw new Error(data.error);
-  const lesson = parseJson(data.text as string);
+  try {
+    const lesson = await invokeJson<DailyLesson>(prompt, system, researchWords.test(`${selectedSubject.name} ${selectedTopic}`));
+    if (!isValidCore(lesson)) throw new Error('invalid lesson core');
+    lesson.sections[0].quiz = [];
+    return lesson;
+  } catch {
+    if (!retry) return generateDailyLessonCore(dayNumber, totalDays, subjects, settings, previousLessons, insights, true);
+    throw new Error('AI не закончил конспект. Попробуй открыть день ещё раз.');
+  }
+}
+
+async function generateQuizBatch(lesson: DailyLesson, settings: StudySettings, batch: 1 | 2, retry = false) {
+  const section = lesson.sections[0];
+  const system = 'Ты создаёшь точные игровые вопросы школьнику на русском языке. Используй только факты из переданного конспекта. Верни строго 5 разных вопросов.';
+  const focus = batch === 1 ? 'основа темы и типичные ошибки' : 'применение, связи и более глубокое понимание';
+  const prompt = `Ученик: ${settings.country}, ${settings.schoolGrade} класс. Предмет: ${section.subject}. Тема: ${section.topic}. Конспект: ${section.summary}. Главное: ${JSON.stringify(section.keyPoints)}. Пример: ${section.workedExample}.
+Создай ровно 5 вопросов (${focus}) и верни только JSON {"quiz":[ВОПРОСЫ]}. ${retry ? 'Предыдущий ответ имел неверный формат — особенно внимательно проверь все поля. ' : ''}
+Допустимые форматы:
+1. {"type":"choice","question":"...","options":["ровно 4 варианта"],"correctIndex":0,"explanation":"до 18 слов","wrongExplanations":["для каждого варианта причина до 12 слов, у правильного пустая строка"]}.
+2. {"type":"true_false","question":"...","options":["Верно","Неверно"],"correctIndex":0,"explanation":"...","wrongExplanations":["...",""]}.
+3. {"type":"short_answer","question":"...","acceptedAnswers":["ответ","вариант"],"explanation":"..."}.
+4. {"type":"order","question":"...","items":["3–6 уникальных элементов в правильном порядке"],"explanation":"..."}.
+Используй минимум 2 подходящих формата. Не повторяй вопросы из другой части: эта часть №${batch}.`;
+  try {
+    const result = await invokeJson<{ quiz: Omit<PracticeQuestion, 'subject' | 'topic'>[] }>(prompt, system);
+    if (Array.isArray(result.quiz) && result.quiz.length === 5 && result.quiz.every(isValidQuestion)) return result.quiz;
+  } catch { if (!retry) return generateQuizBatch(lesson, settings, batch, true); }
+  if (!retry) return generateQuizBatch(lesson, settings, batch, true);
+  throw new Error(`AI не создал часть ${batch} квиза. Попробуй ещё раз.`);
+}
+
+export async function completeDailyLesson(lesson: DailyLesson, settings: StudySettings) {
+  const [first, second] = await Promise.all([generateQuizBatch(lesson, settings, 1), generateQuizBatch(lesson, settings, 2)]);
+  const complete = { ...lesson, sections: [{ ...lesson.sections[0], quiz: [...first, ...second] }] };
+  if (!isValidLesson(complete)) throw new Error('Квиз собрался не полностью. Попробуй ещё раз.');
+  return complete;
+}
+
+export async function saveDailyLesson(dayNumber: number, lesson: DailyLesson) {
   const { data: authData } = await supabase.auth.getSession();
   if (!authData.session) throw new Error('Сессия закончилась. Обнови страницу.');
   const { error: saveError } = await supabase.from('daily_lessons').upsert(
@@ -92,7 +130,6 @@ export async function generateDailyLesson(dayNumber: number, totalDays: number, 
     { onConflict: 'user_id,day_number' },
   );
   if (saveError) throw saveError;
-  return lesson;
 }
 
 export function lessonQuestions(lesson: DailyLesson): PracticeQuestion[] {
