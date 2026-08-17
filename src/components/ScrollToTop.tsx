@@ -5,7 +5,10 @@ export function ScrollToTop() {
   const [location] = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const target = window.location.hash.slice(1);
+    if (!target) { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); return; }
+    const timer = window.setTimeout(() => document.getElementById(target)?.scrollIntoView({ block: 'start' }), 0);
+    return () => window.clearTimeout(timer);
   }, [location]);
 
   return null;

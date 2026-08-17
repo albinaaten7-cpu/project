@@ -2,7 +2,45 @@
 
 :root { --bg: #f7f7fc; --card: #fff; --ink: #26233a; --soft: #77738b; --green: #6554e8; --mint: #eeebff; --orange: #ff7043; --yellow: #ffd65a; --line: #e9e7f3; font-family: 'Manrope', system-ui, sans-serif; color: var(--ink); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: radial-gradient(circle at 8% 2%, #fff0e8 0, transparent 24rem), radial-gradient(circle at 92% 8%, #eceaff 0, transparent 28rem), var(--bg); min-width: 320px; }
+body {
+  position: relative;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 7% 8%, rgba(255, 112, 67, .14) 0, transparent 25rem),
+    radial-gradient(circle at 94% 12%, rgba(101, 84, 232, .16) 0, transparent 29rem),
+    radial-gradient(circle at 14% 76%, rgba(255, 214, 90, .12) 0, transparent 23rem),
+    radial-gradient(circle at 88% 88%, rgba(101, 84, 232, .1) 0, transparent 27rem);
+  background-attachment: fixed;
+}
+body::before {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  opacity: .55;
+  background-image:
+    linear-gradient(rgba(101, 84, 232, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(101, 84, 232, .055) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+}
+body::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  right: -110px;
+  bottom: -130px;
+  width: 390px;
+  height: 390px;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 43%, rgba(255, 112, 67, .07) 44% 57%, transparent 58%);
+  transform: rotate(-12deg);
+}
+#root { position: relative; z-index: 1; min-height: 100vh; }
 button, input, select, textarea { font: inherit; }
 button { border: 0; border-radius: 13px; padding: 13px 19px; background: var(--green); color: white; font-weight: 800; cursor: pointer; transition: transform .18s, box-shadow .18s; }
 button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(101,84,232,.2); }

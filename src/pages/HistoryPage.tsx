@@ -31,6 +31,12 @@ export function HistoryPage() {
     void load();
   }, [refresh]);
 
+  useEffect(() => {
+    if (loading) return;
+    const target = window.location.hash.slice(1);
+    if (target) document.getElementById(target)?.scrollIntoView({ block: 'start' });
+  }, [loading]);
+
   async function remove(id: string) {
     try { await deleteSubject(id); setMessage('Предмет удалён.'); }
     catch { setMessage('Не удалось полностью удалить предмет. Обнови страницу и попробуй ещё раз.'); }
@@ -46,7 +52,7 @@ export function HistoryPage() {
   return (
     <main className="history-page">
       <header className="practice-header">
-        <Link href="/setup">← К настройке</Link>
+        <Link href="/dashboard">← На главную</Link>
         <div className="top-actions"><Link href="/mistakes" className="mistakes-history-button">Работа над ошибками ✦</Link><div className="brand"><span>◎</span> Трек</div></div>
       </header>
       <section className="history-hero">
@@ -55,11 +61,11 @@ export function HistoryPage() {
       </section>
       {message && <p className="account-message">{message}</p>}
       <div className="history-grid">
-        <section className="history-panel">
-          <div className="history-heading"><div><span>Предметы</span><h2>Мои экзамены</h2></div><Link href="/setup">+ Добавить</Link></div>
+        <section className="history-panel" id="subjects">
+          <div className="history-heading"><div><span>Предметы</span><h2>Мои предметы</h2></div><Link href="/setup">+ Добавить</Link></div>
           <SubjectList subjects={subjects} onDelete={remove} onUpdate={edit} />
         </section>
-        <section className="history-panel">
+        <section className="history-panel" id="days">
           <div className="history-heading"><div><span>Маршрут</span><h2>Учебные дни</h2></div><Link href="/study">Продолжить →</Link></div>
           {days.length === 0 ? <div className="empty-state">Пройденных дней пока нет.</div> : (
             <div className="history-days">

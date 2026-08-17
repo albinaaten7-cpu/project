@@ -1,0 +1,20 @@
+.admin-page { width: min(980px, calc(100% - 40px)); min-height: 100vh; margin: auto; padding: 28px 0 70px; }
+.admin-hero { margin: 36px 0 20px; padding: 40px; color: white; background: linear-gradient(125deg, #28233f, #6554e8); border-radius: 28px; }
+.admin-hero span, .admin-heading span { color: #dcd7ff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .13em; }
+.admin-hero h1 { margin: 5px 0; font-size: clamp(36px, 6vw, 58px); }
+.admin-hero p { color: #ece9ff; }
+.admin-students { padding: 28px; background: white; border: 1px solid var(--line); border-radius: 22px; }
+.admin-workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr); gap: 18px; align-items: start; }
+.admin-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.admin-heading span { color: var(--green); }.admin-heading h2 { margin-top: 4px; }
+.admin-heading > b { display: grid; width: 48px; height: 48px; place-items: center; color: var(--green); background: var(--mint); border-radius: 15px; }
+.admin-student-list { display: grid; gap: 10px; }
+.admin-student { width: 100%; display: grid; grid-template-columns: 1fr repeat(3, 76px); gap: 12px; align-items: center; padding: 16px; color: var(--ink); text-align: left; background: #f8f7fd; border: 1px solid transparent; border-radius: 15px; box-shadow: none; }
+.admin-student:hover:not(:disabled), .admin-student.is-selected { border-color: #bdb4ef; background: #f1eeff; box-shadow: none; transform: none; }
+.admin-student > div, .admin-student p { display: grid; gap: 3px; }.admin-student span, .admin-empty { color: var(--soft); font-size: 10px; }.admin-student p b { font-size: 16px; }.admin-student em { width: fit-content; margin-top: 3px; padding: 4px 7px; color: #a14e3d; background: #fff0eb; border-radius: 8px; font-size: 8px; font-style: normal; }
+.admin-user-tools { display: grid; grid-template-columns: 1.2fr .8fr; gap: 10px; margin-bottom: 16px; }
+.admin-help, .admin-feedback { padding: 26px; background: white; border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 12px 35px rgba(48,39,91,.055); }
+.admin-help { position: sticky; top: 20px; }.admin-help > span { color: var(--orange); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }.admin-help h2 { margin: 5px 0; }.admin-help > p { color: var(--soft); font-size: 11px; }.admin-help form { display: grid; gap: 12px; margin-top: 18px; }.admin-help-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }.admin-help-stats b { padding: 6px 8px; color: var(--green); background: var(--mint); border-radius: 9px; font-size: 9px; }
+.admin-empty-panel { min-height: 230px; align-content: center; }.admin-feedback { margin-top: 18px; }.admin-feedback-list { display: grid; gap: 10px; }.admin-feedback-list article { padding: 18px; background: #f8f7fd; border-radius: 15px; }.feedback-meta { display: flex; justify-content: space-between; gap: 12px; }.feedback-meta b { color: var(--orange); font-size: 10px; }.feedback-meta span { color: var(--soft); font-size: 9px; }.admin-feedback-list article > p { margin: 9px 0; font-size: 12px; line-height: 1.6; }.admin-feedback-list blockquote { padding: 10px; color: #4f3ab7; background: #ece8ff; border-radius: 10px; font-size: 11px; }.feedback-answer { padding-left: 0; color: var(--green); }.feedback-reply { display: grid; gap: 8px; }.feedback-reply > div { display: flex; gap: 8px; }
+.account-login-form > div { display: grid; gap: 5px; }
+@media (max-width: 760px) { .admin-workspace { grid-template-columns: 1fr; }.admin-help { position: static; }.admin-user-tools { grid-template-columns: 1fr; }.admin-student { grid-template-columns: 1fr 1fr 1fr; }.admin-student > div { grid-column: 1 / -1; } }

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
-export function useLandingReveal() {
+export function useLandingReveal(enabled = true) {
   useEffect(() => {
+    if (!enabled) return;
     const root = document.documentElement;
     const slides = Array.from(document.querySelectorAll<HTMLElement>('.landing-slide'));
     root.classList.add('landing-scroll', 'reveal-ready');
@@ -17,5 +18,5 @@ export function useLandingReveal() {
       observer.disconnect();
       root.classList.remove('landing-scroll', 'reveal-ready');
     };
-  }, []);
+  }, [enabled]);
 }
