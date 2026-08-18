@@ -40,8 +40,8 @@ export function ProfileEditor({ profile, busy, onSave }: Props) {
   return (
     <form className="profile-details profile-edit-form" onSubmit={submit}>
       <label>Имя<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} minLength={2} maxLength={30} required /></label>
-      <label>Никнейм<div className="nickname-input"><span>@</span><input value={nickname} onChange={(event) => setNickname(event.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} minLength={3} maxLength={24} required /></div></label>
-      <small>Никнейм: латинские буквы, цифры и знак _</small>
+      <label>Никнейм<div className="nickname-input"><span>@</span><input value={nickname} onChange={(event) => setNickname(event.target.value.replace(/[^\p{L}\p{N}_]/gu, ''))} minLength={3} maxLength={24} required /></div></label>
+      <small>Можно использовать русские и латинские буквы, цифры и знак _</small>
       <div className="profile-edit-actions"><button disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button><button type="button" className="ghost" onClick={cancel} disabled={busy}>Отмена</button></div>
     </form>
   );

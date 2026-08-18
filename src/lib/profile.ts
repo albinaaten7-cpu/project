@@ -8,17 +8,22 @@ export async function loadProfile() {
   return data as Profile | null;
 }
 
-export async function createProfile(displayName: string) {
+export async function createProfile(displayName: string, chosenNickname?: string) {
   const { data: authData } = await supabase.auth.getSession();
   if (!authData.session) throw new Error('Сессия не найдена');
-  const nickname = `student_${authData.session.user.id.slice(0, 8)}`;
+  const nickname = chosenNickname || `student_${authData.session.user.id.slice(0, 8)}`;
   const { data, error } = await supabase.from('profiles').upsert({ user_id: authData.session.user.id, display_name: displayName, nickname }).select('user_id, display_name, nickname, xp').single();
+  if (error?.code === '23505') throw new Error('Этот никнейм уже занят.');
   if (error) throw error;
   return data as Profile;
 }
 
 export async function updateProfile(displayName: string, nickname: string) {
-  const { data, error } = await supabase.from('profiles').update({ display_name: displayName, nickname }).select('user_id, display_name, nickname, xp').single();
+  const { data: authData, error: authError } = await supabase.auth.updateUser({ data: { display_name: displayName } });
+  if (authError) throw authError;
+  const userId = authData.user.id;
+  const { data, error } = await supabase.from('profiles').upsert({ user_id: userId, display_name: displayName, nickname }).select('user_id, display_name, nickname, xp').single();
+  if (error?.code === '23505') throw new Error('Этот никнейм уже занят.');
   if (error) throw error;
   return data as Profile;
 }
