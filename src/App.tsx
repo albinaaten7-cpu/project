@@ -10,12 +10,16 @@ import { DiagnosticPage } from './pages/DiagnosticPage';
 import { MistakesPage } from './pages/MistakesPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
+import { FriendsPage } from './pages/FriendsPage';
+import { DuelPage } from './pages/DuelPage';
+import { PresencePing } from './components/PresencePing';
 
 // Здесь живут только маршруты. Сами экраны складывай в src/pages/.
 export default function App() {
   return (
     <>
       <ScrollToTop />
+      <PresencePing />
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/setup" component={SetupPage} />
@@ -26,6 +30,8 @@ export default function App() {
         <Route path="/practice" component={PracticePage} />
         <Route path="/account" component={AccountPage} />
         <Route path="/admin" component={AdminPage} />
+        <Route path="/friends" component={FriendsPage} />
+        <Route path="/duel/:id">{(params) => <DuelPage duelId={params.id} />}</Route>
         <Route path="/history" component={HistoryPage} />
         <Route component={NotFoundPage} />
       </Switch>

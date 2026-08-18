@@ -6,6 +6,7 @@ const actions = [
   { href: '/history#subjects', icon: '▤', title: 'Мои предметы', text: 'Посмотри темы, оценки и измени предметы.', tone: 'plain' },
   { href: '/history#days', icon: '↺', title: 'История', text: 'Вернись к уже созданным учебным дням.', tone: 'plain' },
   { href: '/mistakes', icon: '✦', title: 'Работа над ошибками', text: 'Повтори вопросы, в которых было сложно.', tone: 'warm' },
+  { href: '/friends', icon: '⚡', title: 'Друзья и дуэли', text: 'Найди друзей рядом и позови их на квиз-баттл.', tone: 'warm' },
   { href: '/setup', icon: '+', title: 'Настроить план', text: 'Добавь предмет или выбери новый ритм.', tone: 'plain' },
 ] as const;
 

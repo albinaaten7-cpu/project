@@ -21,6 +21,7 @@ export function SiteHeader({ session = null, setupMode = false }: { session?: Se
         <nav>
           {setupMode ? <Link href="/" className="nav-home">← На главную</Link> : <Link href="/setup" className="nav-start" onClick={startPlan}>Начать</Link>}
           <HistoryLink />
+          {session && !session.user.is_anonymous && <Link href="/friends" className="friends-nav-link">Друзья</Link>}
           <Link href="/account" className="account-link">{!session || session.user.is_anonymous ? 'Вход / регистрация' : 'Профиль'}</Link>
         </nav>
       </header>

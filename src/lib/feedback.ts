@@ -4,16 +4,16 @@ export type FeedbackCategory = 'problem' | 'idea' | 'question';
 export type FeedbackStatus = 'open' | 'in_progress' | 'resolved';
 export type FeedbackItem = {
   id: string; userId: string; category: FeedbackCategory; message: string;
-  status: FeedbackStatus; adminReply: string | null; createdAt: string;
+  status: FeedbackStatus; adminReply: string | null; replyReadAt: string | null; createdAt: string; updatedAt: string;
 };
-export type SupportMessage = { id: string; userId: string; message: string; createdAt: string };
+export type SupportMessage = { id: string; userId: string; message: string; readAt: string | null; createdAt: string };
 
 function mapFeedback(row: Record<string, unknown>): FeedbackItem {
-  return { id: String(row.id), userId: String(row.user_id), category: row.category as FeedbackCategory, message: String(row.message), status: row.status as FeedbackStatus, adminReply: row.admin_reply ? String(row.admin_reply) : null, createdAt: String(row.created_at) };
+  return { id: String(row.id), userId: String(row.user_id), category: row.category as FeedbackCategory, message: String(row.message), status: row.status as FeedbackStatus, adminReply: row.admin_reply ? String(row.admin_reply) : null, replyReadAt: row.reply_read_at ? String(row.reply_read_at) : null, createdAt: String(row.created_at), updatedAt: String(row.updated_at) };
 }
 
 export async function loadMyFeedback() {
-  const { data, error } = await supabase.from('feedback').select('id, user_id, category, message, status, admin_reply, created_at').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('feedback').select('id, user_id, category, message, status, admin_reply, reply_read_at, created_at, updated_at').order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapFeedback);
 }
@@ -24,19 +24,29 @@ export async function createFeedback(category: FeedbackCategory, message: string
 }
 
 export async function loadMySupportMessages() {
-  const { data, error } = await supabase.from('support_messages').select('id, user_id, message, created_at').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('support_messages').select('id, user_id, message, read_at, created_at').order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row) => ({ id: row.id, userId: row.user_id, message: row.message, createdAt: row.created_at })) as SupportMessage[];
+  return (data ?? []).map((row) => ({ id: row.id, userId: row.user_id, message: row.message, readAt: row.read_at, createdAt: row.created_at })) as SupportMessage[];
 }
 
 export async function loadAllFeedback() {
-  const { data, error } = await supabase.from('feedback').select('id, user_id, category, message, status, admin_reply, created_at').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('feedback').select('id, user_id, category, message, status, admin_reply, reply_read_at, created_at, updated_at').order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapFeedback);
 }
 
 export async function answerFeedback(id: string, adminReply: string, status: FeedbackStatus) {
-  const { error } = await supabase.from('feedback').update({ admin_reply: adminReply.trim(), status, updated_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await supabase.from('feedback').update({ admin_reply: adminReply.trim(), reply_read_at: null, status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function markSupportMessageRead(id: string) {
+  const { error } = await supabase.rpc('mark_support_message_read', { p_message_id: id });
+  if (error) throw error;
+}
+
+export async function markFeedbackReplyRead(id: string) {
+  const { error } = await supabase.rpc('mark_feedback_reply_read', { p_feedback_id: id });
   if (error) throw error;
 }
 
