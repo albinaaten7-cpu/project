@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { StudySettings } from './studyData';
 import type { Subject } from './studyPlanner';
@@ -16,7 +17,14 @@ export type LessonSection = {
 export type DailyLesson = { dayNumber: number; title: string; mission: string; sections: LessonSection[] };
 
 function parseJson<T>(text: string) {
-  return JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()) as T;
+  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  try { return JSON.parse(cleaned) as T; }
+  catch {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start < 0 || end <= start) throw new Error('AI вернул ответ без JSON.');
+    return JSON.parse(cleaned.slice(start, end + 1)) as T;
+  }
 }
 
 function isValidQuestion(quiz: Omit<PracticeQuestion, 'subject' | 'topic'>) {
@@ -43,9 +51,13 @@ function isValidCore(lesson: DailyLesson) {
       typeof section.workedExample === 'string');
 }
 
-async function invokeJson<T>(prompt: string, system: string, search = false) {
-  const { data, error } = await supabase.functions.invoke('ai', { body: { prompt, system, search, json: true, thinking: search ? 'medium' : 'low' } });
-  if (error) throw new Error(error.message);
+async function invokeJson<T>(prompt: string, system: string) {
+  const { data, error } = await supabase.functions.invoke('ai', { body: { prompt, system, json: true, thinking: 'low' } });
+  if (error instanceof FunctionsHttpError) {
+    const details = await error.context.json().catch(() => null) as { error?: unknown } | null;
+    if (typeof details?.error === 'string') throw new Error(details.error);
+  }
+  if (error) throw new Error('Не удалось связаться с AI. Попробуй немного позже.');
   if (typeof data?.error === 'string') throw new Error(data.error);
   return parseJson<T>(String(data?.text ?? ''));
 }
@@ -69,7 +81,7 @@ export async function loadLessonHistory() {
   return (data ?? []).map((row) => ({ dayNumber: row.day_number, title: (row.content as DailyLesson).title, createdAt: row.created_at }));
 }
 
-export async function generateDailyLessonCore(dayNumber: number, totalDays: number, subjects: Subject[], settings: StudySettings, previousLessons: DailyLesson[], insights: TopicInsight[], retry = false): Promise<DailyLesson> {
+export async function generateDailyLessonCore(dayNumber: number, totalDays: number, subjects: Subject[], settings: StudySettings, previousLessons: DailyLesson[], insights: TopicInsight[], attempt = 0): Promise<DailyLesson> {
   const selectedSubject = subjects[(dayNumber - 1) % subjects.length];
   const topics = selectedSubject.topics.split(/[;\n]+/).map((topic) => topic.trim()).filter(Boolean);
   const selectedTopic = topics[Math.floor((dayNumber - 1) / subjects.length) % Math.max(1, topics.length)] ?? selectedSubject.topics;
@@ -82,16 +94,17 @@ export async function generateDailyLessonCore(dayNumber: number, totalDays: numb
   const system = 'Ты создаёшь точный школьный мини-конспект на русском языке. Используй надёжные образовательные источники, не выдумывай факты и не добавляй темы, которых нет в запросе.';
   const prompt = `Создай только конспект учебного дня ${dayNumber} из ${totalDays}. Ученик: ${settings.country}, ${settings.schoolGrade} класс. Время: ${settings.dailyMinutes} минут. Точная цель: ${JSON.stringify(context)}. Уже пройдено: ${JSON.stringify(completed)}. Уровень: ${difficulty}. Слабые темы: ${JSON.stringify(weakTopics)}.
 Верни только JSON: {"dayNumber":${dayNumber},"title":"интересное название","mission":"короткая миссия","sections":[{"subject":"${selectedSubject.name}","topic":"${selectedTopic}","summary":"точный мини-конспект 55–80 слов","keyPoints":["ровно 3 точных правила или факта"],"workedExample":"разобранный пример в 2–3 предложениях","quiz":[]}]}.
+${attempt > 0 ? 'Это повторная попытка: не добавляй Markdown, комментарии или текст вне JSON.' : ''}
 Сейчас НЕ создавай вопросы. Объясни суть темы конкретно, без советов вроде «прочитай и повтори».`;
-  const researchWords = /истори|географ|право|обществ|соврем|статист|новост/i;
   try {
-    const lesson = await invokeJson<DailyLesson>(prompt, system, researchWords.test(`${selectedSubject.name} ${selectedTopic}`));
+    const lesson = await invokeJson<DailyLesson>(prompt, system);
     if (!isValidCore(lesson)) throw new Error('invalid lesson core');
     lesson.sections[0].quiz = [];
     return lesson;
-  } catch {
-    if (!retry) return generateDailyLessonCore(dayNumber, totalDays, subjects, settings, previousLessons, insights, true);
-    throw new Error('AI не закончил конспект. Попробуй открыть день ещё раз.');
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Лимит Gemini')) throw error;
+    if (attempt < 2) return generateDailyLessonCore(dayNumber, totalDays, subjects, settings, previousLessons, insights, attempt + 1);
+    throw error instanceof Error ? error : new Error('AI не закончил конспект. Попробуй открыть день ещё раз.');
   }
 }
 

@@ -7,7 +7,7 @@
 //   3) Задеплой:        npm run ai:deploy
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const MODEL = 'gemini-3.5-flash';
+const MODEL = 'gemini-3.5-flash-lite';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +15,7 @@ const cors = {
 };
 
 type GeminiResponse = {
+  error?: { status?: unknown; message?: unknown };
   candidates?: Array<{
     content?: {
       parts?: Array<{ text?: unknown }>;
@@ -72,6 +73,9 @@ Deno.serve(async (req) => {
     const data = (await response.json()) as GeminiResponse;
     if (!response.ok) {
       console.error('Gemini request failed', response.status, data);
+      if (response.status === 429 || data.error?.status === 'RESOURCE_EXHAUSTED') {
+        return json({ error: 'Лимит Gemini закончился. Обнови бесплатный ключ AI или лимит проекта.' }, 429);
+      }
       return json({ error: 'AI сейчас не ответил. Попробуй ещё раз чуть позже.' }, 502);
     }
 
