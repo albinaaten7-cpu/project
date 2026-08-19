@@ -6,13 +6,13 @@ import { LessonLoader } from '../components/LessonLoader';
 import { QuizRound } from '../components/QuizRound';
 import { QuizResult } from '../components/QuizResult';
 import { TodayCard } from '../components/TodayCard';
-import { completeDailyLesson, generateDailyLessonCore, getTotalStudyDays, lessonQuestions, loadDailyLessons, saveDailyLesson, type DailyLesson } from '../lib/dailyLessons';
+import { completeDailyLesson, generateDailyLessonCore, getTotalStudyDays, lessonMatchesTarget, lessonQuestions, loadDailyLessons, saveDailyLesson, type DailyLesson } from '../lib/dailyLessons';
 import { loadStudyData, type StudySettings } from '../lib/studyData';
 import type { PracticeQuestion } from '../lib/practice';
 import type { Subject } from '../lib/studyPlanner';
 import { supabase } from '../lib/supabase';
 import { awardQuizXp } from '../lib/profile';
-import { loadQuizSessions, loadTopicInsights, saveQuizAnswer, type QuizSession } from '../lib/quizProgress';
+import { loadQuizSessions, loadTopicInsights, restartQuizSession, saveQuizAnswer, type QuizSession } from '../lib/quizProgress';
 import { HistoryLink } from '../components/HistoryLink';
 
 export function PracticePage() {
@@ -75,7 +75,14 @@ export function PracticePage() {
     if (!settings) return;
     setSelectedDay(day); setIndex(-1); setScore(0); setStreak(0); setMistakes([]); setReviewMode(false); setQuestions([]); setError('');
     let dailyLesson = lessons.get(day);
-    const savedSession = sessions.get(day);
+    let savedSession = sessions.get(day);
+    if (dailyLesson && !lessonMatchesTarget(dailyLesson, day, subjects)) {
+      dailyLesson = undefined;
+      savedSession = undefined;
+      setLessons((current) => { const next = new Map(current); next.delete(day); return next; });
+      setSessions((current) => { const next = new Map(current); next.delete(day); return next; });
+      void restartQuizSession(day).catch(() => undefined);
+    }
     if (dailyLesson && lessonQuestions(dailyLesson).length >= 10) {
       const nextQuestions = lessonQuestions(dailyLesson);
       setQuestions(nextQuestions); setMainQuestionCount(nextQuestions.length);
@@ -99,7 +106,8 @@ export function PracticePage() {
     if (lessonQuestions(dailyLesson).length < 10) {
       setQuizGenerating(true);
       try {
-        dailyLesson = await completeDailyLesson(dailyLesson, settings);
+        const previousQuestions = Array.from(lessons.values()).flatMap((item) => lessonQuestions(item).map((question) => question.question));
+        dailyLesson = await completeDailyLesson(dailyLesson, settings, previousQuestions);
         setLessons((current) => new Map(current).set(day, dailyLesson!));
         void saveDailyLesson(day, dailyLesson).catch(() => setError('Урок открыт, но не сохранился. Проверь соединение.'));
       } catch (problem) {

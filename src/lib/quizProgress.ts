@@ -30,8 +30,12 @@ export async function saveQuizAnswer(dayNumber: number, questionIndex: number, q
 }
 
 export async function restartQuizSession(dayNumber: number) {
-  const { error } = await supabase.from('quiz_sessions').delete().eq('day_number', dayNumber);
-  if (error) throw error;
+  const results = await Promise.all([
+    supabase.from('quiz_sessions').delete().eq('day_number', dayNumber),
+    supabase.from('quiz_attempts').delete().eq('day_number', dayNumber),
+  ]);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw failed.error;
 }
 
 function topicInsights(rows: Array<{ subject: string; topic: string; is_correct: boolean }>) {

@@ -47,6 +47,7 @@ export async function deleteSubject(id: string) {
 export async function updateSubjectTopics(id: string, topics: string) {
   const { error } = await supabase.from('subjects').update({ topics }).eq('id', id);
   if (error) throw error;
+  await clearGeneratedRoute();
 }
 
 export async function updateSubject(id: string, subject: NewSubject) {
