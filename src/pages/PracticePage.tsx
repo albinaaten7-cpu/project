@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { awardQuizXp } from '../lib/profile';
 import { loadQuizSessions, loadTopicInsights, restartQuizSession, saveQuizAnswer, type QuizSession } from '../lib/quizProgress';
 import { HistoryLink } from '../components/HistoryLink';
+import { GameProgress } from '../components/GameProgress';
 
 export function PracticePage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -138,6 +139,7 @@ export function PracticePage() {
   return (
     <main className="practice-page daily-page">
       <header className="practice-header"><Link href="/setup">← Настройки</Link><div className="game-stats"><span>🔥 {streak}</span><b>⭐ {score} XP</b><Link href="/mistakes">Ошибки</Link><HistoryLink /><Link href="/account">{registered ? 'Профиль' : 'Вход / регистрация'}</Link></div></header>
+      <GameProgress xp={Array.from(sessions.values()).reduce((total, session) => total + session.score, 0)} streak={streak} completedLessons={Array.from(sessions.values()).filter((session) => session.completed).length} />
       <TodayCard day={todayDay} subject={subjects[0]?.name} minutes={settings.dailyMinutes} currentIndex={todaySession?.currentIndex ?? 0} totalQuestions={10} onOpen={() => void openDay(todayDay)} />
       <div className="route-heading"><span>Твой маршрут</span><h1>{totalDays} учебных дней в твоём плане</h1><p>По {settings.dailyMinutes} минут · всего {totalDays} занятий</p></div>
       <DayNavigator total={totalDays} selected={selectedDay} readyDays={new Set(Array.from(lessons.entries()).filter(([, item]) => lessonQuestions(item).length >= 10).map(([day]) => day))} onSelect={(day) => void openDay(day)} />

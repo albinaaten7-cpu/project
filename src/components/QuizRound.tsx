@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PracticeQuestion } from '../lib/practice';
 import { explainQuestionSimply } from '../lib/explanations';
+import { MiniCelebration } from './MiniCelebration';
 
 type Props = { question: PracticeQuestion; onAnswer: (correct: boolean) => void; onNext: () => void; isLast: boolean };
 
@@ -60,7 +61,7 @@ export function QuizRound({ question, onAnswer, onNext, isLast }: Props) {
 
   return (
     <section className="quiz-card">
-      {correct && <div className="correct-celebration" role="status" aria-live="polite"><span className="celebration-burst">✓</span><b>Отлично!</b><i>✦</i><i>★</i><i>✦</i></div>}
+      {correct && <MiniCelebration type="answer" />}
       <div className="quiz-meta"><span>{question.subject}</span><span>{question.topic}</span><span>{labels[type]}</span></div>
       <h2>{question.question}</h2>
       {(type === 'choice' || type === 'true_false') && <div className={`answers ${type === 'true_false' ? 'true-false-answers' : ''}`}>{options.map((option, index) => { const state = correct !== null && index === question.correctIndex ? 'correct' : correct !== null && index === selected ? 'wrong' : ''; return <button className={state} key={`${option}-${index}`} onClick={() => select(index)}><i>{type === 'true_false' ? (index === 0 ? '✓' : '×') : String.fromCharCode(65 + index)}</i>{option}</button>; })}</div>}
